@@ -1,0 +1,10 @@
+name = ""
+age = 0
+
+def sayHello(name, age):
+    print("Hello " + name + ", you are "+ age +" years old ")
+
+inName = (input("What is your name?\n"))
+inAge = (input("How old are you?\n"))
+
+sayHello(inName, inAge)
