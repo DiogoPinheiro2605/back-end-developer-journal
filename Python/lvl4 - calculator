@@ -1,0 +1,15 @@
+#I want to create a calculator starting with basic logic. Instead of multiplying just two numbers, I want the user to be able to multiply as many numbers as they want. Additionally, I want to give the user the option to choose which operation they want to perform.
+print("Welcome to the calculator")
+
+while True:
+    expression = input("Write your expression (or 'exit' to quit): ")
+    
+    if expression.lower() == "exit":
+        print("SHUTTING DOWN...")
+        break
+    
+    try:
+        result = eval(expression)
+        print("Result:", result)
+    except Exception as e:
+        print("Error on the expression:", e)
