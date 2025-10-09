@@ -32,15 +32,44 @@ agents =[
         'activate': True,
     },
     {
-        'id': 1,
+        'id': 3, 
         'name': "Paul",
         'skill_level': "Pleno",
         'activate': False,
     }
 ]
 
-@app.route("/agents")
+@app.route("/agents",methods=["GET"])
 def Get_Agents():
+    return jsonify(agents)
+
+@app.route("/agents/<int:id>",methods=["GET"])
+def Agent_by_id(id):
+    for agent in agents:
+        if agent.get("id") == id:
+            return jsonify(agent)
+          
+@app.route("/agents/<int:id>",methods=["PUT"])
+def Edit_Agent(id):
+    NewInformation = request.get_json()
+    for index,agent in enumerate(agents):
+        if agent.get("id") == id:
+            agents[index].update(NewInformation)
+            return jsonify(agents[index])
+
+@app.route("/agents",methods=["POST"])
+def Add_agent():
+    new_agent = request.get_json()
+    agents.append(new_agent)
+
+    return jsonify(agents)
+
+@app.route("/agents/<int:id>",methods=["DELETE"])
+def Delete_agent(id):
+    for agent in agents:
+        if agent.get("id") == id:
+            agents.remove(agent)
+
     return jsonify(agents)
 
 app.run(port=5000,host="localhost",debug=True)
