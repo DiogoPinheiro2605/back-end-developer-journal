@@ -9,9 +9,9 @@ def main():
     conn = get_connection()
     cursor = conn.cursor()
 
-    sale_id = 1 
-    product_name = "Radio"
-    value = 123
+    sale_id = (input("Which is the id of the product that you want to change?\n")) 
+    product_name = (input("What is the new name of the product?\n")) 
+    value = (input("How much will this item cost ?\n")) 
 
     # secure UPDATE query
     query = "UPDATE sales SET product_name = %s, value = %s WHERE idSales = %s"

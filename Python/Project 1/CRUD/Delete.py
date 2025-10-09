@@ -10,7 +10,7 @@ def main():
     conn = get_connection()
     cursor = conn.cursor()
 
-    sale_id = 2
+    sale_id = (input("Which is the id of the product that you want to delete from the shop?"))
 
     # secure DELETE query
     query = "DELETE FROM sales WHERE idSales = %s"

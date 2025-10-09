@@ -9,8 +9,8 @@ from Connection import get_connection
 conn = get_connection()
 cursor = conn.cursor()
 
-product_name = "Agua"
-value = 2
+product_name = (input("What product do you want to add to the shop?\n"))
+value = (input("How much will this product cost?\n"))
 
 query = "INSERT INTO sales (product_name, value) VALUES (%s, %s)"
 cursor.execute(query, (product_name, value))
