@@ -18,3 +18,23 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
+agents =[
+    {
+        'id': 1,
+        'name': "Diogo",
+        'skill_level': "Junior",
+        'activate': True,
+    },
+    {
+        'id': 2,
+        'name': "John",
+        'skill_level': "Senior",
+        'activate': True,
+    },
+    {
+        'id': 1,
+        'name': "Paul",
+        'skill_level': "Pleno",
+        'activate': False,
+    }
+]
