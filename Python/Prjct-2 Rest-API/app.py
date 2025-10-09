@@ -38,3 +38,9 @@ agents =[
         'activate': False,
     }
 ]
+
+@app.route("/agents")
+def Get_Agents():
+    return jsonify(agents)
+
+app.run(port=5000,host="localhost",debug=True)
