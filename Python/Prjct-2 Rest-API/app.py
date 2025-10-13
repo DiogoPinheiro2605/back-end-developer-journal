@@ -1,75 +1,61 @@
-#Objectives
-# i will use flask
-#Create one API where i can:
-    #Search for a list of agents
-    #Search for a specific agent
-    #Edit a agent
-    #Dele a agent
-#If i can do that whitout a lot of trouble i want to go futher and
-    # i want to implement notification, so i can know everytime an agent
-    # is deleted, editer or add
-
-#localhost/agents (GET)
-#localhost/agents/id (GET)
-#localhost/agent/id (PUT)
-#localhost/agent/id (DELETE)
-
-from flask import Flask, jsonify, request
+# app.py
+from flask import Flask, request, jsonify
+from ai_utils import agent_ai_response
 
 app = Flask(__name__)
 
-agents =[
-    {
-        'id': 1,
-        'name': "Diogo",
-        'skill_level': "Junior",
-        'activate': True,
-    },
-    {
-        'id': 2,
-        'name': "John",
-        'skill_level': "Senior",
-        'activate': True,
-    },
-    {
-        'id': 3, 
-        'name': "Paul",
-        'skill_level': "Pleno",
-        'activate': False,
-    }
+# Base de agentes
+agents = [
+    {"id": 1, "name": "Mother-agent", "skill_level": "Senior", "activate": True, "job": "Sales", "personality": "helpful and guiding"},
+    {"id": 2, "name": "John", "skill_level": "Senior", "activate": True, "job": "Marketing", "personality": "friendly and persuasive"},
+    {"id": 3, "name": "Paul", "skill_level": "Junior", "activate": False, "job": "Calls", "personality": "shy but efficient"},
 ]
 
-@app.route("/agents",methods=["GET"])
-def Get_Agents():
+# --- Endpoints ---
+
+@app.route("/agents", methods=["GET"])
+def get_agents():
     return jsonify(agents)
 
-@app.route("/agents/<int:id>",methods=["GET"])
-def Agent_by_id(id):
-    for agent in agents:
-        if agent.get("id") == id:
-            return jsonify(agent)
-          
-@app.route("/agents/<int:id>",methods=["PUT"])
-def Edit_Agent(id):
-    NewInformation = request.get_json()
-    for index,agent in enumerate(agents):
-        if agent.get("id") == id:
-            agents[index].update(NewInformation)
-            return jsonify(agents[index])
+@app.route("/agents/<int:id>", methods=["GET"])
+def get_agent(id):
+    agent = next((a for a in agents if a["id"] == id), None)
+    if agent:
+        return jsonify(agent)
+    return jsonify({"error": "Agent not found"}), 404
 
-@app.route("/agents",methods=["POST"])
-def Add_agent():
-    new_agent = request.get_json()
-    agents.append(new_agent)
+@app.route("/agents/<int:id>", methods=["PUT"])
+def edit_agent(id):
+    data = request.get_json()
+    agent = next((a for a in agents if a["id"] == id), None)
+    if agent:
+        agent.update(data)
+        return jsonify(agent)
+    return jsonify({"error": "Agent not found"}), 404
 
-    return jsonify(agents)
+@app.route("/agents/<int:id>", methods=["DELETE"])
+def delete_agent(id):
+    agent = next((a for a in agents if a["id"] == id), None)
+    if agent:
+        agents.remove(agent)
+        return jsonify({"message": "Agent deleted"})
+    return jsonify({"error": "Agent not found"}), 404
 
-@app.route("/agents/<int:id>",methods=["DELETE"])
-def Delete_agent(id):
-    for agent in agents:
-        if agent.get("id") == id:
-            agents.remove(agent)
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    agent_id = data.get("agent_id")
+    message = data.get("message")
+    
+    agent = next((a for a in agents if a["id"] == agent_id), None)
+    if not agent:
+        return jsonify({"error": "Agent not found"}), 404
 
-    return jsonify(agents)
+    if agent["name"] == "Mother-agent":
+        agent = agents[1]  # delega para John
 
-app.run(port=5000,host="localhost",debug=True)
+    response_text = agent_ai_response(agent, message)
+    return jsonify({"agent": agent["name"], "response": response_text})
+
+if __name__ == "__main__":
+    app.run(debug=True)
