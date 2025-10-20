@@ -5,12 +5,9 @@ import os
 import sys 
 from dotenv import load_dotenv
 
-# 💡 PATH FIX 💡
-# Adds the project root directory to the Python search path (sys.path)
-# This is crucial for absolute imports like 'from Agents.Excel.excel_agent import...'
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
-# ------------------
+
 
 load_dotenv()
 app = Flask(__name__)
