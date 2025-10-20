@@ -1,26 +1,33 @@
-# Agents/excel_agent.py
+# Agents/Excel/excel_agent.py
 
 import os
 import pandas as pd
 from langchain_community.llms import Ollama
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
-from Data.excel_reader import load_excel_data 
+
+# 🚨 ESSENTIAL IMPORT/PATH 🚨
+# Note: Based on the provided code, the import path is set to look inside the same folder (Agents/Excel).
+# If the excel_reader.py file is actually in the 'Data' folder, this path should be corrected to:
+# from Data.excel_reader import load_excel_data 
+from Agents.Excel.excel_reader import load_excel_data 
 
 
 def create_excel_agent(df: pd.DataFrame):
     """
-    Creates and configures the Pandas DataFrame Analysis Agent using Ollama.
+    Creates and configures the Pandas DataFrame Analysis Agent using Ollama (llama3).
     """
     if df is None:
         return None
         
+    # 1. Configure the LLM to use Ollama (Local Model)
     try:
         llm = Ollama(
-            model="llama3",
+            model="llama3", # Ensure this model is pulled in your Ollama setup
             temperature=0  
         )
         print("✅ LLM (Ollama) successfully initialized.")
     except Exception as e:
+        # If Ollama is installed but not running, this error will occur.
         print(f"❌ ERROR initializing Ollama. Check if the service is running: {e}")
         return None
         
@@ -28,10 +35,13 @@ def create_excel_agent(df: pd.DataFrame):
     excel_agent = create_pandas_dataframe_agent(
         llm,
         df,
-        verbose=True,
+        verbose=True, 
         handle_parsing_errors=True,
-        allow_dangerous_code=True,
         
+        # 🚨 ESSENTIAL FIX: Allows execution of the LLM-generated Pandas code
+        allow_dangerous_code=True, 
+        
+        # 💡 ROBUST PREFIX FOR OLLAMA (to prevent error loops) 💡
         prefix="""
 You are a specialist Pandas data analyst. Your sole objective is to analyze the DataFrame 'df' (which contains data from an Excel file).
 
@@ -45,7 +55,7 @@ Action Input: [THE PYTHON/PANDAS CODE TO SOLVE THE QUESTION HERE]
 
 If the action's observation is an error, generate a new corrected Action Input. 
 If the observation contains the final answer, use it to formulate the final response.
-"""
+""",
     )
     
     return excel_agent
@@ -53,8 +63,9 @@ If the observation contains the final answer, use it to formulate the final resp
 def analyze_data(question: str):
     """
     Entry point to load data and query the LLM agent.
+    This function is used by the Mother Agent as a Tool.
     """
-    # 1. Load the data
+    # 1. Load the data using the corrected function
     df = load_excel_data()
     
     # 2. Create the Agent with the DataFrame and Ollama
@@ -64,17 +75,11 @@ def analyze_data(question: str):
         return "Sorry, I could not initialize the data analysis system with Ollama."
     
     # 3. Invoke the Agent with the question
-    print(f"\n🧠 AGENT LLM (Ollama): Processing question: '{question}'...")
+    print(f"\n🧠 LLM AGENT (Ollama): Processing question: '{question}'...")
     
     try:
+        # The agent receives the question from the Mother Agent
         response = agent.invoke({"input": question})
         return response.get("output", "Could not get a response from the agent.")
     except Exception as e:
         return f"An error occurred during analysis: {e}"
-
-if __name__ == "__main__":
-    test_question = "What is the average of the 'Valor Gasto (€)' column and what are the 3 most common 'Notas'?"
-    response = analyze_data(test_question)
-    print("\n=============================================")
-    print(f"FINAL OLLAMA RESPONSE FOR THE QUESTION: {response}")
-    print("=============================================")
