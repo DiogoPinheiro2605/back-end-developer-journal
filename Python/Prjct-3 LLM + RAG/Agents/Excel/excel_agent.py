@@ -4,13 +4,7 @@ import os
 import pandas as pd
 from langchain_community.llms import Ollama
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
-
-# 🚨 ESSENTIAL IMPORT/PATH 🚨
-# Note: Based on the provided code, the import path is set to look inside the same folder (Agents/Excel).
-# If the excel_reader.py file is actually in the 'Data' folder, this path should be corrected to:
-# from Data.excel_reader import load_excel_data 
 from Agents.Excel.excel_reader import load_excel_data 
-
 
 def create_excel_agent(df: pd.DataFrame):
     """
