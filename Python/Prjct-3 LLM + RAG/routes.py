@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm.exc import NoResultFound
 from pydantic import BaseModel, ValidationError, EmailStr
@@ -140,45 +141,23 @@ def analyze():
 @clients_bp.route("/chat", methods=["POST"])
 def chat_with_agent_route():
     """
-    Route principal. Recebe o prompt do usuário e o envia ao LLM Agent.
-    O Agente decide se deve chamar uma TOOL (ex: update_client_interest) ou responder.
-    """
-    data = request.get_json()
-    message = data.get("message")
-    
-    if not message:
-        return jsonify({"error": "Chat message is required."}), 400
-
-    if "update" in message.lower() or "muda o interesse" in message.lower():
-        return jsonify({"agent_response": "Simulation: The LLM Agent identified a database update intention and would call the 'update_client_interest' Tool.", "message": message}), 200
-    return jsonify({"agent_response": "Simulation: The LLM Agent will answer your query without calling a database tool.", "message": message}), 200
-
-@import_excel_bp.route('/import-excel', methods=['POST'])
-def import_excel():
-    """
-    Importa dados de um ficheiro Excel para a base de dados.
-    - Se não for enviado nenhum caminho, usa o ficheiro padrão.
-    - Se for enviado {"excel_path": "..."} no body, usa o caminho indicado.
+    Route principal. Recebe o prompt do usuário e envia ao LLM Agent.
     """
     try:
-        data = request.get_json(silent=True) or {}
-        excel_path = data.get("excel_path")
+        data = request.get_json()
+        message = data.get("message")
 
-        if excel_path:
-            
-            result = import_excel_to_db(excel_path)
-        else:
-            
-            result = import_default_excel_to_db()
+        if not message:
+            return jsonify({"error": "Chat message is required."}), 400
 
-        # Retorna uma resposta JSON de sucesso
-        return jsonify({"status": "ok", "message": result}), 200
+        # Chama a função real que envia o prompt para o LLM
+        from config_LLM import ask_llm
+        llm_response = ask_llm(message)
 
-    except FileNotFoundError:
-        # Lidar com ficheiros não encontrados
-        return jsonify({"status": "error", "message": f"Erro: Ficheiro Excel não encontrado em '{excel_path}'."}), 404
+        return jsonify({
+            "agent_response": llm_response,
+            "message": message
+        }), 200
+
     except Exception as e:
-        # Lidar com outros erros durante o processamento
-        # É boa prática registar o erro aqui (e.g., app.logger.error(str(e)))
-        return jsonify({"status": "error", "message": f"Ocorreu um erro ao importar o Excel: {str(e)}"}), 500
-    
+        return jsonify({"error": str(e)}), 500
