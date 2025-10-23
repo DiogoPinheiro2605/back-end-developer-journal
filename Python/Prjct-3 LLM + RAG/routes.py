@@ -11,8 +11,11 @@ from CRUD.Read import get_all_clients, get_client_by_id_or_email
 from CRUD.Update import update_client_interest 
 from CRUD.Delete import remove_client_by_email
 
+from Agents.Excel.Excel_importer import import_excel_to_db, import_default_excel_to_db
 
+import_excel_bp = Blueprint('import_excel_bp', __name__, url_prefix='/api')
 clients_bp = Blueprint('clients_api', __name__, url_prefix='/api')
+
 
 class ClientInput(BaseModel):
     nome: str
@@ -48,7 +51,6 @@ def add_client_route():
         # Retorna 400 se a inserção falhar (ex: e-mail duplicado)
         return jsonify({"error": "Database insertion failed", "details": result}), 400
 
-# B. READ (GET)
 @clients_bp.route("/clients", methods=["GET"])
 def get_all_clients_route():
     """Route para obter a lista de todos os clientes. Chama a ferramenta get_all_clients."""
@@ -69,7 +71,6 @@ def get_single_client_route(identifier):
     except Exception as e:
         return jsonify({"error": f"Error searching for client: {str(e)}"}), 500
 
-# C. DELETE (DELETE)
 @clients_bp.route("/clients/<string:client_email>", methods=["DELETE"])
 def delete_client_route(client_email):
     """Route para remover um cliente pelo Email. Chama a ferramenta remove_client_by_email."""
@@ -87,6 +88,29 @@ def home():
 
     return "LLM Agent API is online! Access CRUD routes at /api/clients or chat with the agent at /api/chat."
 
+@clients_bp.route("/clients/interest", methods=["PUT"])
+def update_client_interest_route():
+    """Route para atualizar o interesse de um cliente pelo Email. Chama a ferramenta update_client_interest."""
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        new_interest = data.get("new_interest")
+        
+        if not email or not new_interest:
+            return jsonify({"error": "Email and new_interest fields are required."}), 400
+
+        # Chama a função de CRUD
+        result = update_client_interest(email=email, new_interest=new_interest)
+        
+        if "Success!" in result:
+            return jsonify({"message": "Client interest updated successfully", "result": result}), 200
+        else:
+            # Assume que "Failure: Client not found" será retornado pela função CRUD
+            return jsonify({"error": "Update failed", "details": result}), 404
+            
+    except Exception as e:
+        return jsonify({"error": f"An internal error occurred during update: {str(e)}"}), 500
+    
 @clients_bp.route('/analyze_excel', methods=['POST'])
 def analyze():
     """
@@ -127,20 +151,36 @@ def chat_with_agent_route():
     if not message:
         return jsonify({"error": "Chat message is required."}), 400
 
-    # ⚠️ Integração real do LLM Agent (Descomentar e configurar)
-    # try:
-    #     response = agente_final.invoke({"input": message})
-    #     
-    #     return jsonify({
-    #         "agent_response": response["output"],
-    #         "agent_log": response["intermediate_steps"] # Passos que o agente usou
-    #     }), 200
-        
-    # except Exception as e:
-    #     return jsonify({"error": f"LLM Agent encountered an error: {str(e)}"}), 500
-    
-    # Resposta de placeholder (SIMULAÇÃO)
     if "update" in message.lower() or "muda o interesse" in message.lower():
         return jsonify({"agent_response": "Simulation: The LLM Agent identified a database update intention and would call the 'update_client_interest' Tool.", "message": message}), 200
     return jsonify({"agent_response": "Simulation: The LLM Agent will answer your query without calling a database tool.", "message": message}), 200
 
+@import_excel_bp.route('/import-excel', methods=['POST'])
+def import_excel():
+    """
+    Importa dados de um ficheiro Excel para a base de dados.
+    - Se não for enviado nenhum caminho, usa o ficheiro padrão.
+    - Se for enviado {"excel_path": "..."} no body, usa o caminho indicado.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        excel_path = data.get("excel_path")
+
+        if excel_path:
+            
+            result = import_excel_to_db(excel_path)
+        else:
+            
+            result = import_default_excel_to_db()
+
+        # Retorna uma resposta JSON de sucesso
+        return jsonify({"status": "ok", "message": result}), 200
+
+    except FileNotFoundError:
+        # Lidar com ficheiros não encontrados
+        return jsonify({"status": "error", "message": f"Erro: Ficheiro Excel não encontrado em '{excel_path}'."}), 404
+    except Exception as e:
+        # Lidar com outros erros durante o processamento
+        # É boa prática registar o erro aqui (e.g., app.logger.error(str(e)))
+        return jsonify({"status": "error", "message": f"Ocorreu um erro ao importar o Excel: {str(e)}"}), 500
+    

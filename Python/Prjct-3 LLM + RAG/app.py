@@ -11,7 +11,9 @@ load_dotenv()
 app = Flask(__name__)
 
 from routes import clients_bp
+from routes import import_excel_bp
 
+app.register_blueprint(import_excel_bp)
 app.register_blueprint(clients_bp) 
 
 @app.route('/', methods=['GET'])
