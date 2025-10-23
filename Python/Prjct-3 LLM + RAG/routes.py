@@ -1,5 +1,3 @@
-# routes.py
-
 from flask import Blueprint, request, jsonify
 from sqlalchemy.orm.exc import NoResultFound
 from pydantic import BaseModel, ValidationError, EmailStr

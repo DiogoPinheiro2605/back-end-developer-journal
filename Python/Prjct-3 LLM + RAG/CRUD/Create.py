@@ -31,8 +31,8 @@ def add_new_client(name: str, email: str, interest: str, phone: str = None, addr
             # morada=morada_input, # Uncomment if included
             data_registo=date.today()
         )
-        session.add(new_client) # Prepares the insertion
-        session.commit()          # Executes INSERT INTO MySQL
+        session.add(new_client) 
+        session.commit()          
         
         return f"Success! Client '{nome_input}' added. ID: {new_client.id}"
     except Exception as e:
