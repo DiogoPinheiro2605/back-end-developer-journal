@@ -1,30 +1,32 @@
-from rag_loader import load_documents, split_text
-from rag_chroma import add_documents_to_collection, search_similar_chunks
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config_LLM import ask_llm
+from rag_chroma import search_similar_chunks
 
-def build_vector_store(data_dir: str, collection_name: str):
-    docs = load_documents(data_dir)
-    chunks = []
-    for doc in docs:
-        chunks.extend(split_text(doc))
-    add_documents_to_collection(collection_name, chunks) 
-    return f"Collection '{collection_name}' built with {len(chunks)}chunks."
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))) 
+
+# Importa o novo agente
+from Agents.summarize_agent import summarize_response
 
 def rag_query(user_query: str, collection_name: str, role_prompt: str):
-    relevant_chunks = search_similar_chunks(collection_name, user_query)
+    """
+    Performs the full RAG query: retrieves relevant chunks and delegates 
+    the final response generation to the Summarize Agent.
+    """
+    
+    # 1. RETRIEVAL: Search for relevant chunks
+    relevant_chunks = search_similar_chunks(collection_name, user_query, k=4) 
+    
     context = "\n\n".join(relevant_chunks)
 
-    prompt = f"""
-{role_prompt}
+    if not context.strip():
+        return "The knowledge base did not return any relevant information for this query."
 
-Baseia-te apenas no contexto abaixo para responder à pergunta.
+    print("📝 Sending context and query to Summarize Agent...")
+    
+    final_answer = summarize_response(
+        user_query=user_query,
+        context=context,
+        role_prompt=role_prompt
+    )
 
-Contexto:
-{context}
-
-Pergunta: {user_query}
-"""
-    return ask_llm(prompt)
+    return final_answer

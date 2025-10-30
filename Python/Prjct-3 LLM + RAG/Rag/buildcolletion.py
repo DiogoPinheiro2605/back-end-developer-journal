@@ -1,12 +1,18 @@
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.docstore.document import Document
+import os
+from langchain_text_splitters import CharacterTextSplitter 
+from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
 
-# Lê o conteúdo do ficheiro txt
-with open("../Data/knowledge/estrategias_venda/estrategias_venda.txt", "r", encoding="utf-8") as f:
-    text = f.read()
+current_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(current_dir, "..", "Data", "knowledge", "estrategias_venda", "estrategias_venda.txt")
 
-# Dividir o texto em chunks
+try:
+    with open(file_path, "r", encoding="utf-8") as f:
+        text = f.read()
+except FileNotFoundError:
+    print(f"❌ ERRO: Ficheiro não encontrado no caminho: {file_path}")
+    exit()
+
 text_splitter = CharacterTextSplitter(
     separator="\n\n",
     chunk_size=500,
@@ -15,10 +21,20 @@ text_splitter = CharacterTextSplitter(
 
 chunks = text_splitter.split_text(text)
 
-# Transformar em documentos para o ChromaDB
 documents = [Document(page_content=chunk) for chunk in chunks]
 
-# Criar/atualizar a coleção
-collection = Chroma.from_documents(documents, collection_name="estrategias_venda")
+from langchain_ollama import OllamaEmbeddings
+embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 
-print(f"Collection 'estrategias_venda' construída com {len(chunks)} chunks.")
+persist_dir = os.path.join(current_dir, "chroma_db", "estrategias_venda")
+os.makedirs(persist_dir, exist_ok=True)
+
+collection = Chroma.from_documents(
+    documents=documents, 
+    embedding=embeddings, 
+    collection_name="estrategias_venda",
+    persist_directory=persist_dir 
+)
+
+print(f"✅ Coleção 'estrategias_venda' construída e persistida com {len(chunks)} chunks.")
+print(f"📁 Persistida em: {persist_dir}")
